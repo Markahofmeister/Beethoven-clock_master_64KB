@@ -1,0 +1,2 @@
+../Core/Src/alarm.c:11:19:initRTCInternalAlarm	2
+../Core/Src/alarm.c:41:6:getRTCTime	1
