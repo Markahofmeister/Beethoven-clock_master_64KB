@@ -484,7 +484,7 @@ int main(void)
 
 
 		// Init i2s amplifier
-		NAU9315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
+		NAU8315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
 		startAudioStream();
 
@@ -649,8 +649,7 @@ static void MX_RTC_Init(void)
 
   /* USER CODE END RTC_Init 0 */
 
-//  RTC_TimeTypeDef sTime = {0};
-//  RTC_DateTypeDef sDate = {0};
+  RTC_DateTypeDef sDate = {0};
   RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
@@ -690,15 +689,17 @@ static void MX_RTC_Init(void)
 //  {
 //    Error_Handler();
 //  }
-//  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-//  sDate.Month = RTC_MONTH_JANUARY;
-//  sDate.Date = 0x1;
-//  sDate.Year = 0x0;
-//
-//  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
+
+
+  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+  sDate.Month = RTC_MONTH_JANUARY;
+  sDate.Date = 0x1;
+  sDate.Year = 0x0;
+
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /** Enable the Alarm A
   */
@@ -1710,6 +1711,12 @@ void startAudioStream(void) {
 
 	HAL_StatusTypeDef halRet = HAL_OK;
 
+	// Enable Amplifier
+	NAU8315YG_AmpEnable(&i2sAmp);
+
+	// Start DMA transmission
+	halRet = HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
+
 	// Prime RX buffers with data
 	halRet = W25Q_readData(&spiFlash, 0x00, BUFFER_SIZE, spiRxPtr);
 	spiRxPtr = &spiRxBuff2[0];
@@ -1743,6 +1750,10 @@ void startAudioStream(void) {
 
 
 
+	// Disable Amplifier
+	NAU8315YG_AmpDisable(&i2sAmp);
+
+
 }
 
 /*
@@ -1751,6 +1762,35 @@ void startAudioStream(void) {
 void stopAudioStream(void) {
 
 }
+
+/*
+ * DMA completion callbacks
+ */
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+
+
+
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+
+
+
+}
+
+void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
+
+
+
+}
+
+void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
+
+
+
+}
+
 
 /* USER CODE END 4 */
 

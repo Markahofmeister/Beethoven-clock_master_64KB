@@ -27,12 +27,12 @@ typedef struct {
 /*
  * Initialize Amplifier
  */
-void NAU9315YG_Init(NAU8315YG *nau, I2S_HandleTypeDef *hi2s, GPIO_TypeDef *enablePort, uint32_t enablePin);
+void NAU8315YG_Init(NAU8315YG *nau, I2S_HandleTypeDef *hi2s, GPIO_TypeDef *enablePort, uint32_t enablePin);
 
 /*
  * Enables amplifier
  */
-void NAU8351YG_AmpEnable(NAU8315YG *nau);
+void NAU8315YG_AmpEnable(NAU8315YG *nau);
 
 /*
  * Disables amplifier
