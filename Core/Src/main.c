@@ -177,7 +177,8 @@ bool clearToFillBuff2 = 0;
 bool clearToProcessBuff1 = 0;
 bool clearToProcessBuff2 = 0;
 
-uint32_t flashReadAddr = 0x00;
+// Variable to keep track of where to read audio data from in memory
+uint32_t flashReadAddr = initialMemoryOffset;
 
 
 /* USER CODE END PV */
@@ -1725,7 +1726,7 @@ void startAudioStream(void) {
 	// Prime first half of buffer
 	for(int i = offset; i < ((BUFFER_SIZE) + offset); i += 2) {
 
-		i2sTxBuff[(i - offset) / 2] = (spiRxBuff1[i + 1] << 8) |  spiRxBuff1[i];
+		i2sTxBuff[(i - offset) / 2] = (spiRxBuff1[i] << 8) |  spiRxBuff1[i + 1];
 
 	}
 
@@ -1777,8 +1778,8 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
-	spiRxPtr = &spiRxBuff2[0];
+	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff1);
+//	spiRxPtr = &spiRxBuff2[0];
 	flashReadAddr += BUFFER_SIZE;
 
 	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
@@ -1787,14 +1788,19 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 	}
 
+	// If we have reached the end of the audio clip,
+	if(flashReadAddr > audioAddr_END) {
+		flashReadAddr = initialMemoryOffset;
+	}
+
 	__NOP();
 
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
-	spiRxPtr = &spiRxBuff1[0];
+	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff2);
+//	spiRxPtr = &spiRxBuff1[0];
 	flashReadAddr += BUFFER_SIZE;
 
 	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
