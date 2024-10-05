@@ -455,22 +455,36 @@ int main(void)
 		userAlarmTime.TimeFormat = (uint8_t)HAL_RTCEx_BKUPRead(&hrtc, userAlarmTFBackupReg);
 
 
-  	  // TODO: Init Memory Chip
+		// Init Memory Chip
+		initRet = W25Q_Init(&spiFlash, nCSPort, nWPPort, nHOLDPort,
+	    		 nCSPin, nWPPin, nHOLDPin, &hspi2, spiFlash_devID, spiFlash_isQuadChip, spiFlash_driveStrength);
 
-//	     uint8_t initStat = W25Q_Init(&spiFlash, GPIOA, GPIOA, GPIOA,
-//	   		  	  	  	  	  	  GPIO_PIN_5, GPIO_PIN_6, GPIO_PIN_7, &hspi2, 0x17, 1, 1);
-//
-//		 // Enter error loop if there's an error in initialization
-//		 if(initStat != 0) {
-//		   while(1) {
-//			   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-//			   HAL_Delay(500);
-//			   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-//			   HAL_Delay(500);
-//		   }
-//		 }
+		// Enter error loop if there's an error in initialization
+		if( (initRet == 1) || (initRet == 7) ) {
+			/* Critical Errors:
+			* 1 = Failure to release chip from power down
+			* 7 = Failure to disable write protection
+			*/
+			dispFailure();
+		}
+		else if ( ((initRet >= 2) && (initRet <= 6)) || (initRet == 8) ) {
+			/*
+			* Non-critical Errors:
+			* 2 = Failure to reset chip
+			* 3,6,8 = Failure to read status registers
+			* 4 = Failure to set driver strength
+			* 5 = Failure to read device ID
+			*/
+			dispFault();
+		}
+		else if(initRet == 0) {
+			// initRet = 0 = all is well
+			__NOP();
+		}
 
-     // TODO: Init i2s amplifier
+
+		// Init i2s amplifier
+		NAU9315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
 
   /* USER CODE END 2 */
@@ -478,7 +492,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-		__NOP();
 
   while (1)
   {
@@ -1695,6 +1708,19 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime) {
  * Begins DMA streams to pull data from memory, process data, and push to i2s amplifier.
  */
 void startAudioStream(void) {
+
+	HAL_StatusTypeDef halRet = HAL_OK;
+
+	// Prime RX buffers with data
+	halRet = W25Q_readData(&spiFlash, 0x00000000, BUFFER_SIZE, spiRxPtr);
+	spiRxPtr = spiRxBuff2;
+	halRet = W25Q_readData(&spiFlash, (0x00000000 + BUFFER_SIZE), BUFFER_SIZE, spiRxPtr);
+	spiRxPtr = spiRxBuff1;
+
+
+	__NOP();
+
+
 
 }
 

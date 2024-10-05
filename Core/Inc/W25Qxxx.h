@@ -203,6 +203,15 @@ HAL_StatusTypeDef W25Q_WriteStatusReg(W25Q *wq, uint8_t regNum, uint8_t regVal);
 HAL_StatusTypeDef W25Q_readData(W25Q *wq, uint32_t startAddress, uint32_t dataSize, uint8_t *dataLocation);
 
 /*
+ * Read data from memory over DMA
+ * ONLY INITIALIZES DMA RX, does not actually begin transaction.
+ * startAddress = address to begin reading memory from, 24 bits
+ * dataSize = number of bits to be read
+ * dataLocation = pointer to array where data is to be placed
+ */
+HAL_StatusTypeDef W25Q_readData(W25Q *wq, uint32_t startAddress, uint32_t dataSize, uint8_t *dataLocation);
+
+/*
  * Erases Entire memory
  */
 HAL_StatusTypeDef W25Q_ChipErase(W25Q *wq);

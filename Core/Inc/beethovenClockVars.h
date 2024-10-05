@@ -153,9 +153,11 @@ GPIO_PinState userTimeFormatGPIO_24  = GPIO_PIN_RESET;
 GPIO_TypeDef *nCSPort = GPIOA;
 GPIO_TypeDef *nWPPort = GPIOA;
 GPIO_TypeDef *nHOLDPort = GPIOA;
+
 uint32_t nCSPin = GPIO_PIN_5;
 uint32_t nWPPin = GPIO_PIN_6;
 uint32_t nHOLDPin = GPIO_PIN_7;
+
 uint8_t spiFlash_devID = 0x17;
 uint8_t spiFlash_isQuadChip = 1;
 uint8_t spiFlash_driveStrength = 1;
