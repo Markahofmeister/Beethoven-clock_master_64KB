@@ -177,6 +177,8 @@ bool clearToFillBuff2 = 0;
 bool clearToProcessBuff1 = 0;
 bool clearToProcessBuff2 = 0;
 
+uint32_t flashReadAddr = 0x00;
+
 
 /* USER CODE END PV */
 
@@ -184,9 +186,9 @@ bool clearToProcessBuff2 = 0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_RTC_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2S1_Init(void);
+static void MX_RTC_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM14_Init(void);
@@ -309,6 +311,7 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime);
   * @brief  The application entry point.
   * @retval int
   */
+
 int main(void)
 {
 
@@ -504,6 +507,7 @@ int main(void)
   /* USER CODE END 3 */
 }
 
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -525,11 +529,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
@@ -554,7 +556,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  HAL_RCCEx_EnableLSCO(RCC_LSCOSOURCE_LSI);
 }
 
 /**
@@ -573,7 +574,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00602173;
+  hi2c1.Init.Timing = 0x00C12166;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -649,7 +650,8 @@ static void MX_RTC_Init(void)
 
   /* USER CODE END RTC_Init 0 */
 
-  RTC_DateTypeDef sDate = {0};
+//  RTC_TimeTypeDef sTime = {0};
+//  RTC_DateTypeDef sDate = {0};
   RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
@@ -689,17 +691,15 @@ static void MX_RTC_Init(void)
 //  {
 //    Error_Handler();
 //  }
-
-
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
-  sDate.Year = 0x0;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
+//  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+//  sDate.Month = RTC_MONTH_JANUARY;
+//  sDate.Date = 0x1;
+//  sDate.Year = 0x0;
+//
+//  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
 
   /** Enable the Alarm A
   */
@@ -759,7 +759,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -939,12 +939,6 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAPTOUCH_RESET_GPIO_Port, CAPTOUCH_RESET_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin : PA2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SPI_CHIP_SELECT_Pin MEM_nWP_Pin MEM_nHOLD_Pin SHIFT_DATA_IN_Pin
                            SHIFT_DATA_CLK_Pin SHIFT_MCLR_Pin */
@@ -1714,13 +1708,13 @@ void startAudioStream(void) {
 	// Enable Amplifier
 	NAU8315YG_AmpEnable(&i2sAmp);
 
-	// Start DMA transmission
-	halRet = HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
-
 	// Prime RX buffers with data
-	halRet = W25Q_readData(&spiFlash, 0x00, BUFFER_SIZE, spiRxPtr);
+	halRet = W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
+	flashReadAddr += BUFFER_SIZE;
 	spiRxPtr = &spiRxBuff2[0];
-	halRet = W25Q_readData(&spiFlash, BUFFER_SIZE, BUFFER_SIZE, spiRxPtr);
+
+	halRet = W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
+	flashReadAddr += BUFFER_SIZE;
 	spiRxPtr = &spiRxBuff1[0];
 
 
@@ -1744,14 +1738,10 @@ void startAudioStream(void) {
 
 	}
 
-	halRet = HAL_I2S_Transmit(&hi2s1, i2sTxBuff, BUFFER_SIZE, HAL_MAX_DELAY);
-
 	__NOP();
 
-
-
-	// Disable Amplifier
-	NAU8315YG_AmpDisable(&i2sAmp);
+	// Start TX DMA stream
+	halRet = HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
 
 
 }
@@ -1760,6 +1750,12 @@ void startAudioStream(void) {
  * Halts DMA streams
  */
 void stopAudioStream(void) {
+
+	// Disable Amplifier
+	NAU8315YG_AmpDisable(&i2sAmp);
+
+	// Stop DMA Stream
+	HAL_I2S_DMAStop(&hi2s1);
 
 }
 
@@ -1781,13 +1777,31 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
+	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
+	spiRxPtr = &spiRxBuff2[0];
+	flashReadAddr += BUFFER_SIZE;
 
+	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
+
+		i2sTxBuff[(i/2)] = (spiRxBuff1[i + 1] << 8) | spiRxBuff1[i];
+
+	}
+
+	__NOP();
 
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
+	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
+	spiRxPtr = &spiRxBuff1[0];
+	flashReadAddr += BUFFER_SIZE;
 
+	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
+
+		i2sTxBuff[(BUFFER_SIZE / 2) + (i/2)] = (spiRxBuff2[i + 1] << 8) | spiRxBuff2[i];
+
+	}
 
 }
 
