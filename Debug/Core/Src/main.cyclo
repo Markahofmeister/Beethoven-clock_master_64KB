@@ -30,10 +30,8 @@
 ../Core/Src/main.c:1637:6:dispFailure	2
 ../Core/Src/main.c:1667:6:updateRTCBackupReg	1
 ../Core/Src/main.c:1679:17:conv2Mil	5
-../Core/Src/main.c:1705:6:startAudioStream	5
-../Core/Src/main.c:1753:6:stopAudioStream	1
-../Core/Src/main.c:1767:6:HAL_SPI_TxCpltCallback	1
-../Core/Src/main.c:1773:6:HAL_SPI_RxCpltCallback	1
-../Core/Src/main.c:1779:6:HAL_I2S_TxHalfCpltCallback	3
-../Core/Src/main.c:1800:6:HAL_I2S_TxCpltCallback	2
-../Core/Src/main.c:1821:6:Error_Handler	1
+../Core/Src/main.c:1705:6:startAudioStream	1
+../Core/Src/main.c:1752:6:stopAudioStream	1
+../Core/Src/main.c:1766:6:HAL_I2S_TxHalfCpltCallback	3
+../Core/Src/main.c:1787:6:HAL_I2S_TxCpltCallback	2
+../Core/Src/main.c:1808:6:Error_Handler	1
