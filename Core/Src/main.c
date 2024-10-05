@@ -486,6 +486,8 @@ int main(void)
 		// Init i2s amplifier
 		NAU9315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
+		startAudioStream();
+
 
   /* USER CODE END 2 */
 
@@ -495,9 +497,6 @@ int main(void)
 
   while (1)
   {
-
-
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -759,7 +758,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -1712,11 +1711,33 @@ void startAudioStream(void) {
 	HAL_StatusTypeDef halRet = HAL_OK;
 
 	// Prime RX buffers with data
-	halRet = W25Q_readData(&spiFlash, 0x00000000, BUFFER_SIZE, spiRxPtr);
-	spiRxPtr = spiRxBuff2;
-	halRet = W25Q_readData(&spiFlash, (0x00000000 + BUFFER_SIZE), BUFFER_SIZE, spiRxPtr);
-	spiRxPtr = spiRxBuff1;
+	halRet = W25Q_readData(&spiFlash, 0x00, BUFFER_SIZE, spiRxPtr);
+	spiRxPtr = &spiRxBuff2[0];
+	halRet = W25Q_readData(&spiFlash, BUFFER_SIZE, BUFFER_SIZE, spiRxPtr);
+	spiRxPtr = &spiRxBuff1[0];
 
+
+	__NOP();
+	// Convert 8-bit values to 16-bit values
+	uint8_t offset = 44;
+
+	// Prime first half of buffer
+	for(int i = offset; i < ((BUFFER_SIZE) + offset); i += 2) {
+
+		i2sTxBuff[(i - offset) / 2] = (spiRxBuff1[i + 1] << 8) |  spiRxBuff1[i];
+
+	}
+
+	__NOP();
+
+	// Prime second half of buffer
+	for(int i = 0; i < BUFFER_SIZE; i += 2) {
+
+		i2sTxBuff[(BUFFER_SIZE / 2) + (i/2)] = (spiRxBuff2[i + 1] << 8) |  spiRxBuff2[i];
+
+	}
+
+	halRet = HAL_I2S_Transmit(&hi2s1, i2sTxBuff, BUFFER_SIZE, HAL_MAX_DELAY);
 
 	__NOP();
 
