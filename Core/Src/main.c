@@ -154,28 +154,10 @@ NAU8315YG i2sAmp;
  */
 
 // Two buffers to ping-pong in between for SPI RX
-uint8_t spiRxBuff1[BUFFER_SIZE];
-uint8_t spiRxBuff2[BUFFER_SIZE];
-
-// Pointer to signify which RX buffer DMA should RX data to
-uint8_t *spiRxPtr = &spiRxBuff1[0];
-
-// Pointer to signify which RX buffer CPU should process data from
-uint8_t *dataProcessPtr = &spiRxBuff1[0];
+uint8_t spiRxBuff[BUFFER_SIZE];
 
 // Single circular output buffer to TX I2S audio data
 uint16_t i2sTxBuff[BUFFER_SIZE];
-
-// Pointer to signify which part of the TX buffer we point to
-uint16_t *spiTxPtr = &i2sTxBuff[0];
-
-/*
- * Bools to indicate DMA status
- */
-bool clearToFillBuff1 = 0;
-bool clearToFillBuff2 = 0;
-bool clearToProcessBuff1 = 0;
-bool clearToProcessBuff2 = 0;
 
 // Variable to keep track of where to read audio data from in memory
 uint32_t flashReadAddr = initialMemoryOffset;
@@ -1704,45 +1686,13 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime) {
  */
 void startAudioStream(void) {
 
-	HAL_StatusTypeDef halRet = HAL_OK;
-
 	// Start TX DMA stream
-	halRet = HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
+	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
 
 	// Enable Amplifier
 	NAU8315YG_AmpEnable(&i2sAmp);
 
-//	// Prime RX buffers with data
-//	halRet = W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
-//	flashReadAddr += BUFFER_SIZE;
-//	spiRxPtr = &spiRxBuff2[0];
-//
-//	halRet = W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxPtr);
-//	flashReadAddr += BUFFER_SIZE;
-//	spiRxPtr = &spiRxBuff1[0];
-//
-//
-//	__NOP();
-//	// Convert 8-bit values to 16-bit values
-//	uint8_t offset = 44;
-//
-//	// Prime first half of buffer
-//	for(int i = offset; i < ((BUFFER_SIZE) + offset); i += 2) {
-//
-//		i2sTxBuff[(i - offset) / 2] = (spiRxBuff1[i] << 8) |  spiRxBuff1[i + 1];
-//
-//	}
-//
-//	__NOP();
-//
-//	// Prime second half of buffer
-//	for(int i = 0; i < BUFFER_SIZE; i += 2) {
-//
-//		i2sTxBuff[(BUFFER_SIZE / 2) + (i/2)] = (spiRxBuff2[i + 1] << 8) |  spiRxBuff2[i];
-//
-//	}
-//
-//	__NOP();
+	// Interrupts will take care of the rest.
 
 }
 
@@ -1765,12 +1715,14 @@ void stopAudioStream(void) {
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff1);
+	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
 	flashReadAddr += BUFFER_SIZE;
+
+//	fillTxBuffer(0);
 
 	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
 
-		i2sTxBuff[(i/2)] = (spiRxBuff1[i + 1] << 8) | spiRxBuff1[i];
+		i2sTxBuff[(i/2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
 
 	}
 
@@ -1785,12 +1737,12 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff2);
+	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
 	flashReadAddr += BUFFER_SIZE;
 
 	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
 
-		i2sTxBuff[(BUFFER_SIZE / 2) + (i/2)] = (spiRxBuff2[i + 1] << 8) | spiRxBuff2[i];
+		i2sTxBuff[(BUFFER_SIZE / 2) + (i/2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
 
 	}
 
