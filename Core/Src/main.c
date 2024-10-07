@@ -283,6 +283,9 @@ void stopAudioStream(void);
  */
 RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime);
 
+// Fills I2S tx buffer at a given array index offset
+void fillTxBuffer(uint16_t offset);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -1715,38 +1718,31 @@ void stopAudioStream(void) {
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
-	flashReadAddr += BUFFER_SIZE;
-
-//	fillTxBuffer(0);
-
-	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
-
-		i2sTxBuff[(i/2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
-
-	}
-
-	// If we have reached the end of the audio clip,
-	if(flashReadAddr > audioAddr_END) {
-		flashReadAddr = initialMemoryOffset;
-	}
-
-	__NOP();
+	// Fill first half of i2s TX buffer
+	fillTxBuffer(0);
 
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
+	// Fill second half of i2s transmit buffer
+	fillTxBuffer(BUFFER_SIZE / 2);
+
+}
+
+void fillTxBuffer(uint16_t offset) {
+
+	// Read next chunk of audio data, increment flash read address
 	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
 	flashReadAddr += BUFFER_SIZE;
 
 	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
 
-		i2sTxBuff[(BUFFER_SIZE / 2) + (i/2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
+		i2sTxBuff[offset + (i/2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
 
 	}
 
-	// If we have reached the end of the audio clip,
+	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
 		flashReadAddr = initialMemoryOffset;
 	}
