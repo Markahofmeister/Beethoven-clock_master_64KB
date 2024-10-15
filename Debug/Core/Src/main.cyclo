@@ -34,5 +34,5 @@
 ../Core/Src/main.c:1706:6:stopAudioStream	1
 ../Core/Src/main.c:1720:6:HAL_I2S_TxHalfCpltCallback	1
 ../Core/Src/main.c:1727:6:HAL_I2S_TxCpltCallback	1
-../Core/Src/main.c:1735:6:fillTxBuffer	3
-../Core/Src/main.c:1776:6:Error_Handler	1
+../Core/Src/main.c:1735:6:fillTxBuffer	4
+../Core/Src/main.c:1791:6:Error_Handler	1

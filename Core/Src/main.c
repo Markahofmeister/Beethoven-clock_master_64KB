@@ -157,7 +157,7 @@ NAU8315YG i2sAmp;
 uint8_t spiRxBuff[BUFFER_SIZE];
 
 // Single circular output buffer to TX I2S audio data
-uint16_t i2sTxBuff[BUFFER_SIZE];
+uint16_t i2sTxBuff[BUFFER_SIZE * 2];
 //uint16_t i2sTxBuff[BUFFER_SIZE * 2];
 
 // Variable to keep track of where to read audio data from in memory
@@ -1691,7 +1691,7 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime) {
 void startAudioStream(void) {
 
 	// Start TX DMA stream
-	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
+	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE * 2);
 
 	// Enable Amplifier
 	NAU8315YG_AmpEnable(&i2sAmp);
@@ -1727,8 +1727,8 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 	// Fill second half of i2s transmit buffer
-//	fillTxBuffer(BUFFER_SIZE);
-	fillTxBuffer(BUFFER_SIZE / 2);
+	fillTxBuffer(BUFFER_SIZE);
+//	fillTxBuffer(BUFFER_SIZE / 2);
 
 }
 
@@ -1754,13 +1754,28 @@ void fillTxBuffer(uint16_t offset) {
 //
 //	}
 
+	// Only include the left channel from stereo, but put it in the right channel
+//	for(uint16_t i = 0; i < BUFFER_SIZE; i += 4) {
+//
+//
+//		i2sTxBuff[offset + (i / 2) + 1] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
+//
+//	}
+
+	// Playing all of a mono file canS-mono-reduced
+	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
+
+		 i2sTxBuff[offset + (i) + 1] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
+
+	 }
+
 
 	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
 		flashReadAddr = initialMemoryOffset;
 	}
 
-	if(offset == BUFFER_SIZE / 2) {
+	if(offset == BUFFER_SIZE) {
 		__NOP();
 	}
 
