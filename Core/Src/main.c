@@ -476,7 +476,6 @@ int main(void)
 		// Init i2s amplifier
 		NAU8315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
-		startAudioStream();
 
 
   /* USER CODE END 2 */
@@ -1070,7 +1069,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc) {
 /*
  * If user alarm is enabled and the RTC time equals the user alarm time, this function is entered.
  *
- * This function blinks the display LEDs and toggles the beeper until the user
+ * This function blinks the display LEDs and plays sound until the user
  * disables this beeping through cap. touch or the alarm enable button.
  *
  * Functionality depends on whether or not this is the first or second snooze.
@@ -1082,28 +1081,28 @@ void userAlarmBeep() {
 
 	if (secondSnooze) { 		//If the user has already snoozed once,
 
-			// Stop the timer and
-			HAL_TIM_Base_Stop_IT(timerSnooze);
+		// Stop the timer and
+		HAL_TIM_Base_Stop_IT(timerSnooze);
 
-			// Reset count to 0
-			// only bits 0 - 15 should be changed.
-			timerSnooze->Instance->CNT &= 0xFFFF0000;
+		// Reset count to 0
+		// only bits 0 - 15 should be changed.
+		timerSnooze->Instance->CNT &= 0xFFFF0000;
 
-			// Reset interrupt status register
-			timerSnooze->Instance->SR &= 0xFFFC;
+		// Reset interrupt status register
+		timerSnooze->Instance->SR &= 0xFFFC;
 
-			// Re-write RCR with 10
-			timerSnooze->Instance->RCR &= 0xFF00;
-			timerSnooze->Instance->RCR |= timerSnooze_RCR;
+		// Re-write RCR with 10
+		timerSnooze->Instance->RCR &= 0xFF00;
+		timerSnooze->Instance->RCR |= timerSnooze_RCR;
 
-		}
+	}
 
 	HAL_TIM_Base_Stop(timerDelay);
 	HAL_TIM_Base_Start(timerDelay);						// Begin timer 16 counting (to 500 ms)
 	uint32_t timerVal = __HAL_TIM_GET_COUNTER(timerDelay);	// Get initial timer value to compare to
 	bool displayBlink = false;
 
-	// TODO: Start audio DMA streams
+	// Start audio DMA streams
 	startAudioStream();
 
 	do {						// Beep buzzer and blink display until snooze button is pressed
@@ -1127,11 +1126,11 @@ void userAlarmBeep() {
 			(HAL_GPIO_ReadPin(alarmEnableButtonPort, alarmEnableButtonPin) != GPIO_PIN_RESET));
 
 	/*
-	 * Stop blinking, turn off buzzer, set 50% duty cycle, update time
+	 * Stop blinking, turn off audio, set 50% duty cycle, update time
 	 */
 	HAL_TIM_Base_Stop(timerDelay);
 
-	// TODO: Stop audio stream
+	// Stop audio stream
 	stopAudioStream();
 
 	updateAndDisplayTime();				// Update to current time and display
