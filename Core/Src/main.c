@@ -309,7 +309,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -493,7 +493,6 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
 
 /**
   * @brief System Clock Configuration
@@ -969,13 +968,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(TIME_SWITCH_EXTI_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI0_1_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI2_3_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI2_3_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -1689,6 +1688,10 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime) {
  * Begins DMA streams to pull data from memory, process data, and push to i2s amplifier.
  */
 void startAudioStream(void) {
+
+	// Pre-fill TX buffer
+	fillTxBuffer(0);
+	fillTxBuffer(BUFFER_SIZE);
 
 	// Start TX DMA stream
 	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE * 2);
