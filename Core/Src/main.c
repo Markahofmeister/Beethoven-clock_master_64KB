@@ -476,6 +476,7 @@ int main(void)
 		// Init i2s amplifier
 		NAU8315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
+		startAudioStream();
 
 
   /* USER CODE END 2 */
@@ -1727,7 +1728,7 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 	// Fill second half of i2s transmit buffer
 	fillTxBuffer(BUFFER_SIZE);
-//	fillTxBuffer(BUFFER_SIZE / 2);
+
 
 }
 

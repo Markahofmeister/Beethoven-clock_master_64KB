@@ -172,7 +172,7 @@ uint32_t i2sAmp_enablePin = GPIO_PIN_1;
  * Audio/DMA things
  */
 
-#define BUFFER_SIZE 64
+#define BUFFER_SIZE 256
 
 // Offset of flash memory (first byte to read)
 #define initialMemoryOffset 0
