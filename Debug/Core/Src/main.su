@@ -34,5 +34,5 @@
 ../Core/Src/main.c:1706:6:stopAudioStream	8	static
 ../Core/Src/main.c:1720:6:HAL_I2S_TxHalfCpltCallback	16	static
 ../Core/Src/main.c:1727:6:HAL_I2S_TxCpltCallback	16	static
-../Core/Src/main.c:1735:6:fillTxBuffer	24	static
-../Core/Src/main.c:1771:6:Error_Handler	8	static,ignoring_inline_asm
+../Core/Src/main.c:1735:6:fillTxBuffer	16	static,ignoring_inline_asm
+../Core/Src/main.c:1776:6:Error_Handler	8	static,ignoring_inline_asm

@@ -1738,25 +1738,30 @@ void fillTxBuffer(uint16_t offset) {
 	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
 	flashReadAddr += BUFFER_SIZE;
 
+
+	// Include full channel from stereo
 //	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
 //
-//		 i2sTxBuff[offset + (i)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
+//		 i2sTxBuff[offset + (i / 2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
 //
 //	 }
 
-	uint16_t iTest = 0;
-	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
-
-		i2sTxBuff[offset + (i / 2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
-
-		iTest = iTest + 1;
-
-	}
+	// Only include right channel from stereo
+//	for(uint16_t i = 0; i < BUFFER_SIZE; i += 4) {
+//
+//
+//		i2sTxBuff[offset + (i / 2) + 1] = (spiRxBuff[i + 3] << 8) | spiRxBuff[i + 2];
+//
+//	}
 
 
 	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
 		flashReadAddr = initialMemoryOffset;
+	}
+
+	if(offset == BUFFER_SIZE / 2) {
+		__NOP();
 	}
 
 }
