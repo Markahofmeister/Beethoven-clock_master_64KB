@@ -157,7 +157,7 @@ NAU8315YG i2sAmp;
 uint8_t spiRxBuff[BUFFER_SIZE];
 
 // Single circular output buffer to TX I2S audio data
-uint16_t i2sTxBuff[BUFFER_SIZE * 2];
+uint16_t i2sTxBuff[BUFFER_SIZE];
 //uint16_t i2sTxBuff[BUFFER_SIZE * 2];
 
 // Variable to keep track of where to read audio data from in memory
@@ -1727,8 +1727,8 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 	// Fill second half of i2s transmit buffer
-//	fillTxBuffer(BUFFER_SIZE / 2);
-	fillTxBuffer(BUFFER_SIZE);
+//	fillTxBuffer(BUFFER_SIZE);
+	fillTxBuffer(BUFFER_SIZE / 2);
 
 }
 
@@ -1744,12 +1744,15 @@ void fillTxBuffer(uint16_t offset) {
 //
 //	 }
 
+	uint16_t iTest = 0;
 	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
 
-		i2sTxBuff[offset + (i) + 1] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
+		i2sTxBuff[offset + (i / 2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
 
+		iTest = iTest + 1;
 
 	}
+
 
 	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
