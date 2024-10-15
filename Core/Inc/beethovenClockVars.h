@@ -178,7 +178,7 @@ uint32_t i2sAmp_enablePin = GPIO_PIN_1;
 #define initialMemoryOffset 0
 
 // End of audio data in flash memory
-#define audioAddr_END 0x409CF
+#define audioAddr_END 0x890E0E
 
 
 

@@ -1739,29 +1739,6 @@ void fillTxBuffer(uint16_t offset) {
 	flashReadAddr += BUFFER_SIZE;
 
 
-	// Include full channel from stereo
-//	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
-//
-//		 i2sTxBuff[offset + (i / 2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
-//
-//	 }
-
-	// Only include right channel from stereo
-//	for(uint16_t i = 0; i < BUFFER_SIZE; i += 4) {
-//
-//
-//		i2sTxBuff[offset + (i / 2) + 1] = (spiRxBuff[i + 3] << 8) | spiRxBuff[i + 2];
-//
-//	}
-
-	// Only include the left channel from stereo, but put it in the right channel
-//	for(uint16_t i = 0; i < BUFFER_SIZE; i += 4) {
-//
-//
-//		i2sTxBuff[offset + (i / 2) + 1] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
-//
-//	}
-
 	// Playing all of a mono file canS-mono-reduced
 	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
 
