@@ -384,6 +384,31 @@ HAL_StatusTypeDef W25Q_readData(W25Q *wq, uint32_t startAddress, uint32_t dataSi
 
 }
 
+HAL_StatusTypeDef W25Q_readData_DMA(W25Q *wq, uint32_t startAddress, uint32_t dataSize, uint8_t *dataLocation) {
+
+	HAL_StatusTypeDef halRet = HAL_OK;
+
+	// Create read data array with start address
+	uint8_t readDataArr[4] = {CMD_READ_DATA, ((startAddress >> 16) & 0xFF), ((startAddress >> 8) & 0xFF), ((startAddress) & 0xFF)};
+
+	// TX read data in single-SPI mode command
+	HAL_GPIO_WritePin(wq->nCSPort, wq->nCSPin, GPIO_PIN_RESET);
+	halRet = HAL_SPI_Transmit(wq->hspi, readDataArr, 4, HAL_MAX_DELAY);
+	if(halRet != HAL_OK) {
+		HAL_GPIO_WritePin(wq->nCSPort, wq->nCSPin, GPIO_PIN_SET);
+		return halRet;
+	}
+
+	/*
+	 * Ready to RX data
+	 */
+
+
+	return halRet;
+
+}
+
+
 HAL_StatusTypeDef W25Q_ChipErase(W25Q *wq) {
 
 	HAL_StatusTypeDef halRet = HAL_OK;

@@ -154,28 +154,14 @@ NAU8315YG i2sAmp;
  */
 
 // Two buffers to ping-pong in between for SPI RX
-uint8_t spiRxBuff1[BUFFER_SIZE];
-uint8_t spiRxBuff2[BUFFER_SIZE];
-
-// Pointer to signify which RX buffer DMA should RX data to
-uint8_t *spiRxPtr = &spiRxBuff1[0];
-
-// Pointer to signify which RX buffer CPU should process data from
-uint8_t *dataProcessPtr = &spiRxBuff1[0];
+uint8_t spiRxBuff[BUFFER_SIZE];
 
 // Single circular output buffer to TX I2S audio data
-uint16_t i2sTxBuff[BUFFER_SIZE];
+uint16_t i2sTxBuff[BUFFER_SIZE * 2];
+//uint16_t i2sTxBuff[BUFFER_SIZE * 2];
 
-// Pointer to signify which part of the TX buffer we point to
-uint16_t *spiTxPtr = &i2sTxBuff[0];
-
-/*
- * Bools to indicate DMA status
- */
-bool clearToFillBuff1 = 0;
-bool clearToFillBuff2 = 0;
-bool clearToProcessBuff1 = 0;
-bool clearToProcessBuff2 = 0;
+// Variable to keep track of where to read audio data from in memory
+uint32_t flashReadAddr = initialMemoryOffset;
 
 
 /* USER CODE END PV */
@@ -184,9 +170,9 @@ bool clearToProcessBuff2 = 0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_RTC_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2S1_Init(void);
+static void MX_RTC_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM14_Init(void);
@@ -298,6 +284,9 @@ void stopAudioStream(void);
  */
 RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime);
 
+// Fills I2S tx buffer at a given array index offset
+void fillTxBuffer(uint16_t offset);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -309,6 +298,7 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime);
   * @brief  The application entry point.
   * @retval int
   */
+
 int main(void)
 {
 
@@ -455,22 +445,38 @@ int main(void)
 		userAlarmTime.TimeFormat = (uint8_t)HAL_RTCEx_BKUPRead(&hrtc, userAlarmTFBackupReg);
 
 
-  	  // TODO: Init Memory Chip
+		// Init Memory Chip
+		initRet = W25Q_Init(&spiFlash, nCSPort, nWPPort, nHOLDPort,
+	    		 nCSPin, nWPPin, nHOLDPin, &hspi2, spiFlash_devID, spiFlash_isQuadChip, spiFlash_driveStrength);
 
-//	     uint8_t initStat = W25Q_Init(&spiFlash, GPIOA, GPIOA, GPIOA,
-//	   		  	  	  	  	  	  GPIO_PIN_5, GPIO_PIN_6, GPIO_PIN_7, &hspi2, 0x17, 1, 1);
-//
-//		 // Enter error loop if there's an error in initialization
-//		 if(initStat != 0) {
-//		   while(1) {
-//			   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-//			   HAL_Delay(500);
-//			   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-//			   HAL_Delay(500);
-//		   }
-//		 }
+		// Enter error loop if there's an error in initialization
+		if( (initRet == 1) || (initRet == 7) ) {
+			/* Critical Errors:
+			* 1 = Failure to release chip from power down
+			* 7 = Failure to disable write protection
+			*/
+			dispFailure();
+		}
+		else if ( ((initRet >= 2) && (initRet <= 6)) || (initRet == 8) ) {
+			/*
+			* Non-critical Errors:
+			* 2 = Failure to reset chip
+			* 3,6,8 = Failure to read status registers
+			* 4 = Failure to set driver strength
+			* 5 = Failure to read device ID
+			*/
+			dispFault();
+		}
+		else if(initRet == 0) {
+			// initRet = 0 = all is well
+			__NOP();
+		}
 
-     // TODO: Init i2s amplifier
+
+		// Init i2s amplifier
+		NAU8315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
+
+		startAudioStream();
 
 
   /* USER CODE END 2 */
@@ -478,19 +484,16 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-		__NOP();
 
   while (1)
   {
-
-
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
+
 
 /**
   * @brief System Clock Configuration
@@ -513,11 +516,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
@@ -542,7 +543,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  HAL_RCCEx_EnableLSCO(RCC_LSCOSOURCE_LSI);
 }
 
 /**
@@ -561,7 +561,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00602173;
+  hi2c1.Init.Timing = 0x00C12166;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -746,7 +746,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -926,12 +926,6 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAPTOUCH_RESET_GPIO_Port, CAPTOUCH_RESET_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin : PA2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SPI_CHIP_SELECT_Pin MEM_nWP_Pin MEM_nHOLD_Pin SHIFT_DATA_IN_Pin
                            SHIFT_DATA_CLK_Pin SHIFT_MCLR_Pin */
@@ -1696,6 +1690,14 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime) {
  */
 void startAudioStream(void) {
 
+	// Start TX DMA stream
+	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
+
+	// Enable Amplifier
+	NAU8315YG_AmpEnable(&i2sAmp);
+
+	// Interrupts will take care of the rest.
+
 }
 
 /*
@@ -1703,7 +1705,59 @@ void startAudioStream(void) {
  */
 void stopAudioStream(void) {
 
+	// Disable Amplifier
+	NAU8315YG_AmpDisable(&i2sAmp);
+
+	// Stop DMA Stream
+	HAL_I2S_DMAStop(&hi2s1);
+
 }
+
+/*
+ * DMA completion callbacks
+ */
+
+void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
+
+	// Fill first half of i2s TX buffer
+	fillTxBuffer(0);
+
+}
+
+void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
+
+	// Fill second half of i2s transmit buffer
+//	fillTxBuffer(BUFFER_SIZE / 2);
+	fillTxBuffer(BUFFER_SIZE);
+
+}
+
+void fillTxBuffer(uint16_t offset) {
+
+	// Read next chunk of audio data, increment flash read address
+	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
+	flashReadAddr += BUFFER_SIZE;
+
+//	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
+//
+//		 i2sTxBuff[offset + (i)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
+//
+//	 }
+
+	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
+
+		i2sTxBuff[offset + (i) + 1] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
+
+
+	}
+
+	// If we have reached the end of the audio clip, reset flash read address
+	if(flashReadAddr > audioAddr_END) {
+		flashReadAddr = initialMemoryOffset;
+	}
+
+}
+
 
 /* USER CODE END 4 */
 

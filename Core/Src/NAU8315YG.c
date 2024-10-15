@@ -10,7 +10,7 @@
 #include "../Inc/NAU8315YG.h"
 #endif
 
-void NAU9315YG_Init(NAU8315YG *nau, I2S_HandleTypeDef *hi2s, GPIO_TypeDef *enablePort, uint32_t enablePin) {
+void NAU8315YG_Init(NAU8315YG *nau, I2S_HandleTypeDef *hi2s, GPIO_TypeDef *enablePort, uint32_t enablePin) {
 
 	nau->hi2s = hi2s;
 
