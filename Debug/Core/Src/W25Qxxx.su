@@ -8,8 +8,8 @@
 ../Core/Src/W25Qxxx.c:307:19:W25Q_WriteStatusReg	40	static,ignoring_inline_asm
 ../Core/Src/W25Qxxx.c:363:19:W25Q_readData	48	static
 ../Core/Src/W25Qxxx.c:387:19:W25Q_readData_DMA	48	static
-../Core/Src/W25Qxxx.c:412:19:W25Q_ChipErase	32	static
-../Core/Src/W25Qxxx.c:427:19:W25Q_ChipPowerDown	32	static
-../Core/Src/W25Qxxx.c:439:19:W25Q_ChipReset	32	static,ignoring_inline_asm
-../Core/Src/W25Qxxx.c:468:19:W25Q_QuadEnable	32	static
-../Core/Src/W25Qxxx.c:495:19:W25Q_SetDriverStrength	32	static
+../Core/Src/W25Qxxx.c:411:19:W25Q_ChipErase	32	static
+../Core/Src/W25Qxxx.c:426:19:W25Q_ChipPowerDown	32	static
+../Core/Src/W25Qxxx.c:438:19:W25Q_ChipReset	32	static,ignoring_inline_asm
+../Core/Src/W25Qxxx.c:467:19:W25Q_QuadEnable	32	static
+../Core/Src/W25Qxxx.c:494:19:W25Q_SetDriverStrength	32	static

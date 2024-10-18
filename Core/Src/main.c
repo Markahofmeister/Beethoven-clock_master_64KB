@@ -287,6 +287,8 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime);
 // Fills I2S tx buffer at a given array index offset
 void fillTxBuffer(uint16_t offset);
 
+uint8_t txCount = 0;
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -493,6 +495,7 @@ HAL_Init();
   }
   /* USER CODE END 3 */
 }
+
 
 /**
   * @brief System Clock Configuration
@@ -706,13 +709,6 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-
-  /** Enable Calibration
-  */
-  if (HAL_RTCEx_SetCalibrationOutPut(&hrtc, RTC_CALIBOUTPUT_512HZ) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN RTC_Init 2 */
 
   // Do not initialize time - pull from whatever is in register
@@ -912,6 +908,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13|SHIFT_STORE_CLK_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SPI_CHIP_SELECT_Pin|MEM_nWP_Pin|MEM_nHOLD_Pin|SHIFT_MCLR_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
@@ -921,10 +920,14 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, SHIFT_DATA_IN_Pin|SHIFT_DATA_CLK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SHIFT_STORE_CLK_GPIO_Port, SHIFT_STORE_CLK_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAPTOUCH_RESET_GPIO_Port, CAPTOUCH_RESET_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pins : PC13 SHIFT_STORE_CLK_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|SHIFT_STORE_CLK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SPI_CHIP_SELECT_Pin MEM_nWP_Pin MEM_nHOLD_Pin SHIFT_DATA_IN_Pin
                            SHIFT_DATA_CLK_Pin SHIFT_MCLR_Pin */
@@ -941,13 +944,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SHIFT_STORE_CLK_Pin */
-  GPIO_InitStruct.Pin = SHIFT_STORE_CLK_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SHIFT_STORE_CLK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : ALARM_SET_BUTTON_EXTI_Pin */
   GPIO_InitStruct.Pin = ALARM_SET_BUTTON_EXTI_Pin;
@@ -1722,12 +1718,17 @@ void stopAudioStream(void) {
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
+	txCount += 1;
+
 	// Fill first half of i2s TX buffer
 	fillTxBuffer(0);
+
 
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
+
+	txCount -= 1;
 
 	// Fill second half of i2s transmit buffer
 	fillTxBuffer(BUFFER_SIZE);
@@ -1737,10 +1738,16 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 void fillTxBuffer(uint16_t offset) {
 
+	// Flip pin high
+	GPIOC->BSRR = (uint32_t)GPIO_PIN_13;
+
 	// Read next chunk of audio data, increment flash read address
 	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
 	flashReadAddr += BUFFER_SIZE;
 
+	// Flip pin low, then high
+	GPIOC->BRR = (uint32_t)GPIO_PIN_13;
+	GPIOC->BSRR = (uint32_t)GPIO_PIN_13;
 
 	// Playing all of a mono file canS-mono-reduced
 	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
@@ -1749,15 +1756,20 @@ void fillTxBuffer(uint16_t offset) {
 
 	 }
 
+	 // Flip pin low
+	GPIOC->BRR = (uint32_t)GPIO_PIN_13;
+
 
 	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
 		flashReadAddr = initialMemoryOffset;
 	}
 
-	if(offset == BUFFER_SIZE) {
-		__NOP();
-	}
+	// Ensure wrong buffers are not being overwritten
+//	if( (txCount != 1) && (txCount != 0) ) {
+//		dispFailure();
+//	}
+
 
 }
 
