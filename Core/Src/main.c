@@ -287,7 +287,7 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime);
 // Fills I2S tx buffer at a given array index offset
 void fillTxBuffer(uint16_t offset);
 
-uint8_t txCount = 0;
+uint16_t txCount;
 
 /* USER CODE END PFP */
 
@@ -311,7 +311,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-HAL_Init();
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -335,6 +335,8 @@ HAL_Init();
   MX_TIM14_Init();
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
+
+  	  txCount = 2;
 
 	  // HAL Status handle for error-checking
 	  HAL_StatusTypeDef halRet = HAL_OK;
@@ -747,7 +749,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 7;
   hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   if (HAL_SPI_Init(&hspi2) != HAL_OK)
   {
     Error_Handler();
@@ -1718,7 +1720,7 @@ void stopAudioStream(void) {
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	txCount += 1;
+	txCount++;
 
 	// Fill first half of i2s TX buffer
 	fillTxBuffer(0);
@@ -1728,7 +1730,7 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	txCount -= 1;
+	txCount++;
 
 	// Fill second half of i2s transmit buffer
 	fillTxBuffer(BUFFER_SIZE);
@@ -1738,16 +1740,9 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 void fillTxBuffer(uint16_t offset) {
 
-	// Flip pin high
-	GPIOC->BSRR = (uint32_t)GPIO_PIN_13;
-
 	// Read next chunk of audio data, increment flash read address
 	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
 	flashReadAddr += BUFFER_SIZE;
-
-	// Flip pin low, then high
-	GPIOC->BRR = (uint32_t)GPIO_PIN_13;
-	GPIOC->BSRR = (uint32_t)GPIO_PIN_13;
 
 	// Playing all of a mono file canS-mono-reduced
 	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
@@ -1756,9 +1751,10 @@ void fillTxBuffer(uint16_t offset) {
 
 	 }
 
-	 // Flip pin low
-	GPIOC->BRR = (uint32_t)GPIO_PIN_13;
-
+	 txCount--;
+	 if(txCount > 2) {
+		 dispFailure();
+	 }
 
 	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
@@ -1769,6 +1765,14 @@ void fillTxBuffer(uint16_t offset) {
 //	if( (txCount != 1) && (txCount != 0) ) {
 //		dispFailure();
 //	}
+
+
+}
+
+void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s) {
+
+	//TEST?
+	__NOP();
 
 
 }
