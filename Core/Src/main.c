@@ -287,8 +287,6 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime);
 // Fills I2S tx buffer at a given array index offset
 void fillTxBuffer(uint16_t offset);
 
-uint16_t txCount;
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -1720,8 +1718,6 @@ void stopAudioStream(void) {
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 
-	txCount++;
-
 	// Fill first half of i2s TX buffer
 	fillTxBuffer(0);
 
@@ -1729,8 +1725,6 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
-
-	txCount++;
 
 	// Fill second half of i2s transmit buffer
 	fillTxBuffer(BUFFER_SIZE);
@@ -1751,20 +1745,11 @@ void fillTxBuffer(uint16_t offset) {
 
 	 }
 
-	 txCount--;
-	 if(txCount > 2) {
-		 dispFailure();
-	 }
 
 	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
 		flashReadAddr = initialMemoryOffset;
 	}
-
-	// Ensure wrong buffers are not being overwritten
-//	if( (txCount != 1) && (txCount != 0) ) {
-//		dispFailure();
-//	}
 
 
 }
