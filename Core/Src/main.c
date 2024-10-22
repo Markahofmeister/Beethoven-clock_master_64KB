@@ -157,7 +157,7 @@ NAU8315YG i2sAmp;
 uint8_t spiRxBuff[BUFFER_SIZE];
 
 // Single circular output buffer to TX I2S audio data
-uint16_t i2sTxBuff[BUFFER_SIZE];
+uint16_t i2sTxBuff[BUFFER_SIZE * 2];
 //uint16_t i2sTxBuff[BUFFER_SIZE * 2];
 
 // Variable to keep track of where to read audio data from in memory
@@ -309,7 +309,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -476,7 +476,7 @@ int main(void)
 		// Init i2s amplifier
 		NAU8315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
-		startAudioStream();
+//		startAudioStream();
 
 
   /* USER CODE END 2 */
@@ -707,13 +707,6 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-
-  /** Enable Calibration
-  */
-  if (HAL_RTCEx_SetCalibrationOutPut(&hrtc, RTC_CALIBOUTPUT_512HZ) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN RTC_Init 2 */
 
   // Do not initialize time - pull from whatever is in register
@@ -752,7 +745,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 7;
   hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   if (HAL_SPI_Init(&hspi2) != HAL_OK)
   {
     Error_Handler();
@@ -913,6 +906,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13|SHIFT_STORE_CLK_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SPI_CHIP_SELECT_Pin|MEM_nWP_Pin|MEM_nHOLD_Pin|SHIFT_MCLR_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
@@ -922,10 +918,14 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, SHIFT_DATA_IN_Pin|SHIFT_DATA_CLK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SHIFT_STORE_CLK_GPIO_Port, SHIFT_STORE_CLK_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAPTOUCH_RESET_GPIO_Port, CAPTOUCH_RESET_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pins : PC13 SHIFT_STORE_CLK_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|SHIFT_STORE_CLK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SPI_CHIP_SELECT_Pin MEM_nWP_Pin MEM_nHOLD_Pin SHIFT_DATA_IN_Pin
                            SHIFT_DATA_CLK_Pin SHIFT_MCLR_Pin */
@@ -942,13 +942,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SHIFT_STORE_CLK_Pin */
-  GPIO_InitStruct.Pin = SHIFT_STORE_CLK_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SHIFT_STORE_CLK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : ALARM_SET_BUTTON_EXTI_Pin */
   GPIO_InitStruct.Pin = ALARM_SET_BUTTON_EXTI_Pin;
@@ -969,13 +962,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(TIME_SWITCH_EXTI_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI0_1_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI2_3_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI2_3_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -1070,7 +1063,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc) {
 /*
  * If user alarm is enabled and the RTC time equals the user alarm time, this function is entered.
  *
- * This function blinks the display LEDs and toggles the beeper until the user
+ * This function blinks the display LEDs and plays sound until the user
  * disables this beeping through cap. touch or the alarm enable button.
  *
  * Functionality depends on whether or not this is the first or second snooze.
@@ -1082,28 +1075,28 @@ void userAlarmBeep() {
 
 	if (secondSnooze) { 		//If the user has already snoozed once,
 
-			// Stop the timer and
-			HAL_TIM_Base_Stop_IT(timerSnooze);
+		// Stop the timer and
+		HAL_TIM_Base_Stop_IT(timerSnooze);
 
-			// Reset count to 0
-			// only bits 0 - 15 should be changed.
-			timerSnooze->Instance->CNT &= 0xFFFF0000;
+		// Reset count to 0
+		// only bits 0 - 15 should be changed.
+		timerSnooze->Instance->CNT &= 0xFFFF0000;
 
-			// Reset interrupt status register
-			timerSnooze->Instance->SR &= 0xFFFC;
+		// Reset interrupt status register
+		timerSnooze->Instance->SR &= 0xFFFC;
 
-			// Re-write RCR with 10
-			timerSnooze->Instance->RCR &= 0xFF00;
-			timerSnooze->Instance->RCR |= timerSnooze_RCR;
+		// Re-write RCR with 10
+		timerSnooze->Instance->RCR &= 0xFF00;
+		timerSnooze->Instance->RCR |= timerSnooze_RCR;
 
-		}
+	}
 
 	HAL_TIM_Base_Stop(timerDelay);
 	HAL_TIM_Base_Start(timerDelay);						// Begin timer 16 counting (to 500 ms)
 	uint32_t timerVal = __HAL_TIM_GET_COUNTER(timerDelay);	// Get initial timer value to compare to
 	bool displayBlink = false;
 
-	// TODO: Start audio DMA streams
+	// Start audio DMA streams
 	startAudioStream();
 
 	do {						// Beep buzzer and blink display until snooze button is pressed
@@ -1127,11 +1120,11 @@ void userAlarmBeep() {
 			(HAL_GPIO_ReadPin(alarmEnableButtonPort, alarmEnableButtonPin) != GPIO_PIN_RESET));
 
 	/*
-	 * Stop blinking, turn off buzzer, set 50% duty cycle, update time
+	 * Stop blinking, turn off audio, set 50% duty cycle, update time
 	 */
 	HAL_TIM_Base_Stop(timerDelay);
 
-	// TODO: Stop audio stream
+	// Stop audio stream
 	stopAudioStream();
 
 	updateAndDisplayTime();				// Update to current time and display
@@ -1690,8 +1683,12 @@ RTC_TimeTypeDef conv2Mil(RTC_TimeTypeDef *oldTime) {
  */
 void startAudioStream(void) {
 
+	// Pre-fill TX buffer
+	fillTxBuffer(0);
+	fillTxBuffer(BUFFER_SIZE);
+
 	// Start TX DMA stream
-	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE);
+	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE * 2);
 
 	// Enable Amplifier
 	NAU8315YG_AmpEnable(&i2sAmp);
@@ -1722,13 +1719,14 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s) {
 	// Fill first half of i2s TX buffer
 	fillTxBuffer(0);
 
+
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s) {
 
 	// Fill second half of i2s transmit buffer
-//	fillTxBuffer(BUFFER_SIZE);
-	fillTxBuffer(BUFFER_SIZE / 2);
+	fillTxBuffer(BUFFER_SIZE);
+
 
 }
 
@@ -1738,26 +1736,27 @@ void fillTxBuffer(uint16_t offset) {
 	W25Q_readData(&spiFlash, flashReadAddr, BUFFER_SIZE, spiRxBuff);
 	flashReadAddr += BUFFER_SIZE;
 
-//	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
-//
-//		 i2sTxBuff[offset + (i)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
-//
-//	 }
+	// Playing all of a mono file canS-mono-reduced
+	 for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
 
-	uint16_t iTest = 0;
-	for(uint16_t i = 0; i < BUFFER_SIZE; i += 2) {
+		 i2sTxBuff[offset + (i) + 1] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
 
-		i2sTxBuff[offset + (i / 2)] = (spiRxBuff[i + 1] << 8) | spiRxBuff[i];
-
-		iTest = iTest + 1;
-
-	}
+	 }
 
 
 	// If we have reached the end of the audio clip, reset flash read address
 	if(flashReadAddr > audioAddr_END) {
 		flashReadAddr = initialMemoryOffset;
 	}
+
+
+}
+
+void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s) {
+
+	//TEST?
+	__NOP();
+
 
 }
 

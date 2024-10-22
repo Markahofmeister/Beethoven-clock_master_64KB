@@ -408,7 +408,6 @@ HAL_StatusTypeDef W25Q_readData_DMA(W25Q *wq, uint32_t startAddress, uint32_t da
 
 }
 
-
 HAL_StatusTypeDef W25Q_ChipErase(W25Q *wq) {
 
 	HAL_StatusTypeDef halRet = HAL_OK;
