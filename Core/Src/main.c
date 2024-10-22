@@ -334,8 +334,6 @@ int main(void)
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
-  	  txCount = 2;
-
 	  // HAL Status handle for error-checking
 	  HAL_StatusTypeDef halRet = HAL_OK;
 
@@ -478,7 +476,7 @@ int main(void)
 		// Init i2s amplifier
 		NAU8315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
-		startAudioStream();
+//		startAudioStream();
 
 
   /* USER CODE END 2 */
