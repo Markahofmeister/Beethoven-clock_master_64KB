@@ -124,7 +124,7 @@ const uint32_t timerSnooze_RCR = 100;
  * State bools
  */
 
-// Used to blare alarm if enabled
+// Used to flag alarm set mode
 bool alarmSetMode = false;
 
 /*
@@ -133,6 +133,9 @@ bool alarmSetMode = false;
  * false = regular operation, true = 10-minute snooze period
  */
 bool secondSnooze = false;
+
+// Used to indicate whether or not we are in alarm beep state
+bool beepMode = false;
 
 /*
  * Cap. touch struct
@@ -488,6 +491,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	  if(beepMode) {
+		  userAlarmBeep();
+	  }
 
     /* USER CODE BEGIN 3 */
   }
@@ -1054,7 +1060,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc) {
 	  // If alarm is enabled and current time matches user alarm time, set off the alarm.
 	  if(userAlarmToggle && userAlarmTime.Hours == currTime.Hours
 			  && userAlarmTime.Minutes == currTime.Minutes && userAlarmTime.TimeFormat == currTime.TimeFormat) {
-		  userAlarmBeep();
+		  beepMode = true;
 	  }
 
 
@@ -1151,6 +1157,10 @@ void userAlarmBeep() {
 		secondSnooze = false;
 
 	}
+
+	// Reset beepMode bool
+	beepMode = false;
+
 }
 
 /*
