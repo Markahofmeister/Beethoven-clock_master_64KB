@@ -495,6 +495,8 @@ int main(void)
 		  userAlarmBeep();
 	  }
 
+
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
