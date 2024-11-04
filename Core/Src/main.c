@@ -479,13 +479,10 @@ int main(void)
 		// Init i2s amplifier
 		NAU8315YG_Init(&i2sAmp, &hi2s1, i2sAmp_enablePort, i2sAmp_enablePin);
 
-		// Increase SPI clk speed
-		GPIOA->OSPEEDR |= 0b10;
+		// Increase SPI clk driver power
+		GPIOA->OSPEEDR |= 0b11;
 
-		startAudioStream();
-
-
-
+//		startAudioStream();
 
   /* USER CODE END 2 */
 
@@ -1708,7 +1705,7 @@ void startAudioStream(void) {
 	HAL_I2S_Transmit_DMA(&hi2s1, i2sTxBuff, BUFFER_SIZE * 2);
 
 	// Enable Amplifier
-//	NAU8315YG_AmpEnable(&i2sAmp);
+	NAU8315YG_AmpEnable(&i2sAmp);
 
 	// Interrupts will take care of the rest.
 
