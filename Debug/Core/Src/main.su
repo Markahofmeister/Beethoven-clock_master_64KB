@@ -32,8 +32,8 @@
 ../Core/Src/main.c:1672:17:conv2Mil	48	static
 ../Core/Src/main.c:1698:6:startAudioStream	8	static
 ../Core/Src/main.c:1717:6:stopAudioStream	8	static
-../Core/Src/main.c:1731:6:HAL_I2S_TxHalfCpltCallback	16	static
-../Core/Src/main.c:1739:6:HAL_I2S_TxCpltCallback	16	static
-../Core/Src/main.c:1747:6:fillTxBuffer	24	static
-../Core/Src/main.c:1769:6:HAL_I2S_ErrorCallback	16	static,ignoring_inline_asm
-../Core/Src/main.c:1784:6:Error_Handler	8	static,ignoring_inline_asm
+../Core/Src/main.c:1734:6:HAL_I2S_TxHalfCpltCallback	16	static
+../Core/Src/main.c:1742:6:HAL_I2S_TxCpltCallback	16	static
+../Core/Src/main.c:1750:6:fillTxBuffer	24	static
+../Core/Src/main.c:1772:6:HAL_I2S_ErrorCallback	16	static,ignoring_inline_asm
+../Core/Src/main.c:1787:6:Error_Handler	8	static,ignoring_inline_asm

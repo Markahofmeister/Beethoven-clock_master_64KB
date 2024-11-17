@@ -1722,6 +1722,9 @@ void stopAudioStream(void) {
 	// Stop DMA Stream
 	HAL_I2S_DMAStop(&hi2s1);
 
+	// Reset memory address pointer
+	flashReadAddr = initialMemoryOffset;
+
 }
 
 /*

@@ -32,8 +32,8 @@
 ../Core/Src/main.c:1672:17:conv2Mil	5
 ../Core/Src/main.c:1698:6:startAudioStream	1
 ../Core/Src/main.c:1717:6:stopAudioStream	1
-../Core/Src/main.c:1731:6:HAL_I2S_TxHalfCpltCallback	1
-../Core/Src/main.c:1739:6:HAL_I2S_TxCpltCallback	1
-../Core/Src/main.c:1747:6:fillTxBuffer	3
-../Core/Src/main.c:1769:6:HAL_I2S_ErrorCallback	1
-../Core/Src/main.c:1784:6:Error_Handler	1
+../Core/Src/main.c:1734:6:HAL_I2S_TxHalfCpltCallback	1
+../Core/Src/main.c:1742:6:HAL_I2S_TxCpltCallback	1
+../Core/Src/main.c:1750:6:fillTxBuffer	3
+../Core/Src/main.c:1772:6:HAL_I2S_ErrorCallback	1
+../Core/Src/main.c:1787:6:Error_Handler	1
