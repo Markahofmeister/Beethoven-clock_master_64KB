@@ -72,15 +72,14 @@ uint8_t W25Q_Init(W25Q *wq, GPIO_TypeDef *nCSPort, GPIO_TypeDef *nWPPort, GPIO_T
 	else
 		returnInc++;
 
-	// TODO: If the chip is changed to an -IM PN (rather than -IQ,) Disable quad mode
 	// Not doable on IQ chips - they seem to be OTP
-//	if(wq->quadEnable) {
-//		halRet = W25Q_QuadEnable(wq, 0);
-//		if(halRet != HAL_OK && errorsEnabled)
-//			return returnInc;
-//		else
-//			returnInc++;
-//	}
+	if(wq->quadEnable) {
+		halRet = W25Q_QuadEnable(wq, 0);
+		if(halRet != HAL_OK && errorsEnabled)
+			return returnInc;
+		else
+			returnInc++;
+	}
 
 
 	// Get + Store IDs

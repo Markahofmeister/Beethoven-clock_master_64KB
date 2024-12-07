@@ -114,7 +114,7 @@ GPIO_TypeDef *debugLEDPort = GPIOB;
 
 
 // RTC Calibration Value
-uint32_t rtcCalVal = 0x0131;
+uint32_t rtcCalVal = 0x012C;
 
 
 /*
@@ -179,6 +179,11 @@ uint32_t i2sAmp_enablePin = GPIO_PIN_1;
 
 // End of audio data in flash memory
 #define audioAddr_END 0x890E0E
+
+/*
+ * RCR value for long 10-minute snooze
+ */
+const uint32_t timerSnooze_RCR = 100;
 
 
 
