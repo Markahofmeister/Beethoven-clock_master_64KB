@@ -64,7 +64,7 @@ uint8_t capTouchChannels = 0b00001111;
  * Specifies averaging values for each cap. touch IC channel
  * This value will be right-shifted twice and must be a power of 2
  */
-uint8_t AVGFact = 8;
+uint8_t AVGFact = 4;
 
 // Specifies detection integration values for each cap. touch IC channel
 uint8_t DIFact = 0x04;
