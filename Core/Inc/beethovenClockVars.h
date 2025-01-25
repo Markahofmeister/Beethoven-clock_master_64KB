@@ -82,7 +82,7 @@ const uint16_t shiftMCLRPin = GPIO_PIN_11;
 GPIO_TypeDef *GPIOPortArray[5] = {GPIOA, GPIOA, GPIOC, GPIOC, GPIOA};
 
 /*
- * Array of all duty cycles used - 0%, 50%, 100%.
+ * Array of all duty cycles used - 0%, 50%
  */
 
 const uint8_t sevSeg_intensityDuty[2] = {100, 50};

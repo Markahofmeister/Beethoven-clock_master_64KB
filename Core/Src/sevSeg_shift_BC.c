@@ -164,8 +164,8 @@ void sevSeg_updateDigits(RTC_TimeTypeDef *updateTime, uint8_t userAlarmEnable) {
 		// If one's place of hour, set decimal point based on AM/PM.
 		// OR
 		// If one's place of minute, set decimal place based on user alarm enabled
-		if( ((i == 1) && (updateTime->TimeFormat == RTC_HOURFORMAT12_PM)) ||
-			((i == 3) && userAlarmEnable)	) {
+		if( ((i == 3) && (updateTime->TimeFormat == RTC_HOURFORMAT12_PM)) ||
+			((i == 1) && userAlarmEnable)	) {
 			sendByte = (sendByte & 0b11111101);
 		}
 

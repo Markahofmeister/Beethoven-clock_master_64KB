@@ -1151,8 +1151,8 @@ void userAlarmBeep() {
 	stopAudioStream();
 
 	updateAndDisplayTime();				// Update to current time and display
-	sevSeg_setIntensity(sevSeg_intensityDuty[1]);	// Set to 50% duty cycle
-	displayToggle = 2;								// Set to 2 for future display button ISRs
+	sevSeg_setIntensity(sevSeg_intensityDuty[1]);	// Set display to on
+	displayToggle = 0;								// Set to 2 for future display button ISRs
 
 
 	// If this is the first snooze,
@@ -1283,11 +1283,7 @@ HAL_StatusTypeDef displayButtonISR(void) {
 
 	sevSeg_setIntensity(sevSeg_intensityDuty[displayToggle]);		//Turn display to proper duty cycle
 
-	if(displayToggle >= 1) {			// Increment display toggle or reset back down to 0;
-		displayToggle = 0;
-	} else {
-		displayToggle++;
-	}
+	displayToggle = !displayToggle;
 
 	return halRet;				// Return HAL status
 
