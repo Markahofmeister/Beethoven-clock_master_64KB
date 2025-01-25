@@ -86,49 +86,9 @@ void sevSeg_Init(uint16_t shiftDataPin, uint16_t shiftDataClockPin, uint16_t shi
 	HAL_GPIO_WritePin(portArray[2], shiftStoreClock, GPIOPinSet[0]);
 	HAL_GPIO_WritePin(portArray[3], shiftOutputEnable, GPIOPinSet[0]);
 
-	// Set duty cycle to 50%
+	// Set duty cycle to 50% (on)
 
 	sevSeg_setIntensity(50);
-
-	//Flash an initializing "Hof" symbol
-	uint8_t hofSymb[4] = {0b00000000, 0b00110111, 0b00011101, 0b01000111};
-
-	uint8_t sendByte;					// To be used to shift bits
-
-	for(int i = 0; i <= 3; i++) {
-
-		sendByte = hofSymb[i];
-
-		for(int j = 0; j < 8; j++) {
-
-			// Write data pin with LSB of data
-			HAL_GPIO_WritePin(portArray[0], shiftData, GPIOPinSet[sendByte & 1]);
-
-			// Toggle clock GPIO to shift bit into register
-			HAL_GPIO_WritePin(portArray[1], shiftDataClock, GPIOPinSet[1]);
-			HAL_GPIO_WritePin(portArray[1], shiftDataClock, GPIOPinSet[0]);
-
-			// Once data pin has been written and shifted out, shift data right by one bit.
-			sendByte >>= 1;
-
-		}
-	}
-
-	// Once all data has been shifted out, toggle store clock register to display data.
-	HAL_GPIO_WritePin(portArray[2], shiftStoreClock, GPIOPinSet[1]);
-	HAL_GPIO_WritePin(portArray[2], shiftStoreClock, GPIOPinSet[0]);
-
-	// Delay for 500 ms using hardware timer
-	HAL_TIM_Base_Stop(htim);
-	HAL_TIM_Base_Start(htim);							// Begin timer counting
-	uint32_t timerVal = __HAL_TIM_GET_COUNTER(htim);	// Get initial timer value to compare to
-
-	//Hang in dead loop until 500 ms
-	while(__HAL_TIM_GET_COUNTER(htim) - timerVal <= (65535 / 4)){
-//		timerVal = __HAL_TIM_GET_COUNTER(htim);
-	}
-
-	HAL_TIM_Base_Stop(htim);
 
 	// Clear any existing shift register data
 	HAL_GPIO_WritePin(portArray[4], shiftMCLR, GPIOPinSet[0]);
