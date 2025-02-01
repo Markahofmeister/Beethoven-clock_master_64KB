@@ -1108,9 +1108,6 @@ void userAlarmBeep() {
 		// Reset interrupt status register
 		timerSnooze->Instance->SR &= 0xFFFC;
 
-		// Re-write RCR with 10
-		timerSnooze->Instance->RCR &= 0xFF00;
-		timerSnooze->Instance->RCR |= timerSnooze_RCR;
 
 	}
 
